@@ -1,0 +1,5 @@
+import edgar
+
+edgar = edgar.Edgar()
+possible_companies = edgar.findCompanyName("Hortonworks")
+print( possible_companies )
