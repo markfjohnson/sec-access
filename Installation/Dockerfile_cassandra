@@ -1,0 +1,13 @@
+#
+# Reference the base spark image
+FROM mesosphere/spark:2.3.1-2.2.1-2-hadoop-2.6
+ENV CLASSPATH=/opt/spark/dist/jars/spark-streaming-kafka-0-10_2.11-2.2.0.jar
+# Install the pip3 utility so we can install the Python package
+RUN apt-get update && apt-get install -y software-properties-common
+RUN add-apt-repository universe
+RUN apt-get install -y python-pip python-pandas build-essential python-dev
+RUN pip install xmltodict py4j kafka-python cassandra-driver
+#COPY spark-streaming-kafka-0-10_2.11-2.2.0.jar /opt/spark/dist/jars/spark-streaming-kafka-0-10_2.11-2.2.0.jar
+
+
+
