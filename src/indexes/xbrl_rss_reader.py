@@ -1,28 +1,28 @@
 import feedparser
 import os.path
 import sys, getopt
-import time, datetime
-import json
+import time
 import socket
 from io import BytesIO
 from zipfile import ZipFile
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import re
-from pyspark import SparkConf, SparkContext
+from pyspark import SparkContext
 from pyspark.sql.types import *
 from pyspark.sql import SQLContext,Row, SparkSession
-from pyspark.sql.functions import udf
-from pyspark.sql.functions import to_timestamp, to_date
-from pyspark.sql.types import DateType
+from pyspark.sql.functions import to_date
+
 
 sc = SparkContext("local","simple App")
 sqlContext = SQLContext(sc)
 spark = SparkSession(sc)
 
+
 def get_xbrl_element_value(tag, parser):
     h = parser.find(re.compile(tag,re.IGNORECASE | re.MULTILINE)).text
     return(h)
+
 
 def is_number(s):
     try:
@@ -39,6 +39,7 @@ def is_number(s):
         pass
     return False
 
+
 def parse_filing(a):
     soup = BeautifulSoup(a, 'lxml')
     document_type = get_xbrl_element_value("dei:DocumentType",soup)
@@ -51,7 +52,6 @@ def parse_filing(a):
     custom_data = soup.find_all(re.compile('^((?!(us-gaap|dei|xbrll|xbrldi)).)*:\s*', re.IGNORECASE | re.MULTILINE))
     hdr = {'doc_type': document_type, 'company_name':company_name, 'symbol':symbol, 'amendment_flag':amendment_flag, 'fiscal_year':fiscal_year, 'period_end':period_end,'custom_data':custom_data, 'context_info':context_info}
     return hdr
-
 
 
 def excluded_xbrl_files(fname):
