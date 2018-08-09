@@ -3,44 +3,43 @@ import os.path
 import sys, getopt
 import time
 import socket
-from urllib.request import urlopen
-from urllib.error import URLError, HTTPError
+#from urllib.request import urlopen
+import urllib
+#from urllib.error import URLError, HTTPError
+import requests
 import xml.etree.ElementTree as ET
 import zipfile
 import zlib
 
 
-def downloadfile(sourceurl, targetfname):
-    mem_file = ""
-    good_read = False
-    xbrlfile = None
-    if os.path.isfile(targetfname):
-        print("Local copy already exists")
-        return True
-    else:
-        #       print("Downloading:", sourceurl)
-        try:
-            xbrlfile = urlopen(sourceurl)
-            xbrlfile = urlopen(sourceurl)
-            try:
-                mem_file = xbrlfile.read()
-                good_read = True
-            finally:
-                xbrlfile.close()
-        except HTTPError as e:
-            print("HTTP Error:", e.code)
-        except URLError as e:
-            print("URL Error:", e.reason)
-        except TimeoutError as e:
-            print("Timeout Error:", e.reason)
-        except socket.timeout:
-            print("Socket Timeout Error")
-        if good_read:
-            output = open(targetfname, 'wb')
-            output.write(mem_file)
-            output.close()
-        return good_read
+# def downloadfile(sourceurl, targetfname):
+#     mem_file = ""
+#     good_read = False
+#     xbrlfile = None
+#     if os.path.isfile(targetfname):
+#         print("Local copy already exists")
+#         return True
+#     else:
+#         #       print("Downloading:", sourceurl)
+#         try:
+#             #xbrlfile = urlib.request.urlopen(sourceurl)
+#             xbrlfile = urlib.request.urlopen(sourceurl)
+#             try:
+#                 mem_file = xbrlfile.read()
+#                 good_read = True
+#             finally:
+#                 xbrlfile.close()
+#         except ValueError, Argument:
+#             print("Exception({}): {}".format(ValueError, Argument) )
+#         if good_read:
+#             output = open(targetfname, 'wb')
+#             output.write(mem_file)
+#             output.close()
+#         return good_read
 
+def downloadfile(sourceurl, targetfname):
+    r = requests.get(sourceurl, allow_redirects=True)
+    open(targetfname, 'wb').write(r.content)
 
 def SECdownload_index(year, month):
     root = None
@@ -62,25 +61,21 @@ def SECdownload_index(year, month):
     target_dir = "sec/" + str(year) + '/' + str(month).zfill(2) + '/'
     # end temp delete when cassandra down
 
+    feedFile = None
     try:
-        feedFile = urlopen(edgarFilingsFeed)
+        feedFile = requests.get(edgarFilingsFeed, allow_redirects=True)
         try:
             feedData = feedFile.read()
             good_read = True
+        except:
+            print("Error encountered")
         finally:
-            feedfile.write()
+            feedFile.write()
             feedFile.close()
+    except:
+            print("get error")
 
-    except HTTPError as e:
-        print("HTTP Error:", e.code)
 
-    except URLError as e:
-        print("URL Error:", e.reason)
-
-    except TimeoutError as e:
-        print("Timeout Error:", e.reason)
-    except socket.timeout:
-        print("Socket Timeout Error")
 
     if not good_read:
         print("Unable to download RSS feed document for the month:", year, month)
@@ -205,9 +200,9 @@ def main(argv):
 
         for year in range(from_year, to_year + 1):
             for month in range(1, 12 + 1):
-                SECdownload(year, month)
+                SECdownload_index(year, month)
     else:
-        SECdownload(year, month)
+        SECdownload_index(year, month)
     end_time = time.time()
     print("Elapsed time:", end_time - start_time, "seconds")
 
