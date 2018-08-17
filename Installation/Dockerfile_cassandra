@@ -7,9 +7,8 @@ RUN apt-get update && apt-get install -y software-properties-common
 RUN add-apt-repository universe
 RUN dyum install gcc python-devel
 RUN yum install libev libev-devel
-RUN apt-get install -y python-pip python-pandas build-essential python-dev
-RUN apt-get -y install python3-pip
-RUN pip3 install xmltodict py4j kafka-python cassandra-driver feedparser
+RUN apt-get install -y python-pip python-pandas build-essential python-dev python3-pip
+RUN pip3 install xmltodict py4j kafka-python cassandra-driver beautifulsoup4 lxml
 
 
 

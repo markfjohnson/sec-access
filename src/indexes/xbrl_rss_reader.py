@@ -1,27 +1,28 @@
-import feedparser
+import getopt
 import os.path
-import sys, getopt
-import time
-import socket
-from io import BytesIO
-from zipfile import ZipFile
-from urllib.request import urlopen
-from bs4 import BeautifulSoup
 import re
+import socket
+import sys
+import time
+from io import BytesIO
+from urllib.request import urlopen
+from zipfile import ZipFile
+
+import xmltodict
+from bs4 import BeautifulSoup
 from pyspark import SparkContext
-from pyspark.sql.types import *
-from pyspark.sql import SQLContext,Row, SparkSession
+from pyspark.sql import SQLContext, Row, SparkSession
 from pyspark.sql.functions import to_date
+from pyspark.sql.types import *
 
-
-sc = SparkContext("local","simple App")
+sc = SparkContext("local", "simple App")
 sqlContext = SQLContext(sc)
 spark = SparkSession(sc)
 
 
 def get_xbrl_element_value(tag, parser):
-    h = parser.find(re.compile(tag,re.IGNORECASE | re.MULTILINE)).text
-    return(h)
+    h = parser.find(re.compile(tag, re.IGNORECASE | re.MULTILINE)).text
+    return h
 
 
 def is_number(s):
@@ -42,20 +43,21 @@ def is_number(s):
 
 def parse_filing(a):
     soup = BeautifulSoup(a, 'lxml')
-    document_type = get_xbrl_element_value("dei:DocumentType",soup)
-    company_name = get_xbrl_element_value("dei:EntityRegistrantName",soup)
-    symbol = get_xbrl_element_value("dei:TradingSymbol",soup)
-    amendment_flag = get_xbrl_element_value("dei:AmendmentFlag",soup)
-    fiscal_year = get_xbrl_element_value("dei:DocumentFiscalYearFocus",soup)
-    period_end = get_xbrl_element_value("DocumentPeriodEndDat",soup)
+    document_type = get_xbrl_element_value("dei:DocumentType", soup)
+    company_name = get_xbrl_element_value("dei:EntityRegistrantName", soup)
+    symbol = get_xbrl_element_value("dei:TradingSymbol", soup)
+    amendment_flag = get_xbrl_element_value("dei:AmendmentFlag", soup)
+    fiscal_year = get_xbrl_element_value("dei:DocumentFiscalYearFocus", soup)
+    period_end = get_xbrl_element_value("DocumentPeriodEndDat", soup)
     context_info = soup.find_all(re.compile('^(context|xbrli:context)', re.IGNORECASE | re.MULTILINE))
     custom_data = soup.find_all(re.compile('^((?!(us-gaap|dei|xbrll|xbrldi)).)*:\s*', re.IGNORECASE | re.MULTILINE))
-    hdr = {'doc_type': document_type, 'company_name':company_name, 'symbol':symbol, 'amendment_flag':amendment_flag, 'fiscal_year':fiscal_year, 'period_end':period_end,'custom_data':custom_data, 'context_info':context_info}
+    hdr = {'doc_type': document_type, 'company_name': company_name, 'symbol': symbol, 'amendment_flag': amendment_flag,
+           'fiscal_year': fiscal_year, 'period_end': period_end, 'custom_data': custom_data, 'context_info': context_info}
     return hdr
 
 
 def excluded_xbrl_files(fname):
-    if (fname.endswith("xsd") or fname.endswith("_cal.xml") or fname.endswith("_def.xml") or fname.endswith("_lab.xml") or fname.endswith("_pre.xml")):
+    if fname.endswith("xsd") or fname.endswith("_cal.xml") or fname.endswith("_def.xml") or fname.endswith("_lab.xml") or fname.endswith("_pre.xml"):
         return False
     else:
         return True
@@ -68,36 +70,36 @@ def access_xbrl_doc_data(link):
     xbrl_file = [x for x in fileList if excluded_xbrl_files(x)][0]
     a = zip_ref.read(xbrl_file)
 
-    return(a)
+    return a
+
 
 def extract_xbrl(doc_values):
     custom_data = doc_values['custom_data']
     result = []
     for data in custom_data:
         context_id = data.attrs.get('contextref')
-        if (context_id != None):
-            context_info = [ctx for ctx in doc_values['context_info'] if ctx['id']==context_id]
+        if context_id is not None:
+            context_info = [ctx for ctx in doc_values['context_info'] if ctx['id'] == context_id]
             period_date = context_info[0].contents[3].contents[1].text
             a = data.attrs.get('decimals')
 
-            if (a != None and a != 'INF'):
+            if a is not None and a != 'INF':
                 positions = len(data.text) - abs(int(a))
-                if (positions <= 0):
+                if positions <= 0:
                     value = float(data.text)
                 else:
-                    if (data.text.find(".") == -1):
+                    if data.text.find(".") == -1:
                         value = float(data.text[:positions] + '.' + data.text[positions:])
                     else:
                         value = float(data.text)
             else:
-                if (len(data.text) > 0):
-                    if (is_number(data.text)):
+                if len(data.text) > 0:
+                    if is_number(data.text):
                         value = float(data.text)
                     else:
                         value = data.text
                 else:
                     value = 0
-
 
             r = Row(company_name=doc_values['company_name'], doc_type=doc_values['doc_type'],
                 fiscal_year=doc_values['fiscal_year'], period_date=period_date, period_end=doc_values['period_end'],
@@ -110,33 +112,35 @@ def extract_xbrl(doc_values):
 #                  doc_values['period_end'], doc_values['symbol'], doc_values['amendment_flag'], data.name, value)
 #            print("----------------------------------------------")
 
-    return(result)
+    return result
 
 
-
-
-def SECdownload_rss_entries(year, month):
+def SEC_rss_pre_processor(year, month):
     edgarFilingsFeed = 'http://www.sec.gov/Archives/edgar/monthly/xbrlrss-' + str(year) + '-' + str(month).zfill(
         2) + '.xml'
-    print(edgarFilingsFeed)
-    feed = feedparser.parse(edgarFilingsFeed).entries
-    return(feed)
+    a = urlopen(edgarFilingsFeed).read()
+    soup = BeautifulSoup(a, 'lxml')
+    entries = soup.find_all(re.compile('^(item)', re.IGNORECASE | re.MULTILINE))
+    return entries
+
 
 def convert_entries(entry_json):
-    filing_date = time.strptime(entry_json['edgar_filingdate'],"%m/%d/%Y")
-#    period_date = time.strptime(entry_json.get('edgar_period'), "%Y%m%d")
+    a = xmltodict.parse(str(entry_json))['item']
+    statement = (a['edgar:xbrlfiling']['edgar:companyname'],
+                 a['edgar:xbrlfiling']['edgar:formtype'],
+                 a['edgar:xbrlfiling']['edgar:filingdate'],
+                 a['edgar:xbrlfiling']['edgar:ciknumber'],
+                 a['edgar:xbrlfiling'].get('edgar_period'),
+                 a['guid'])
+    return statement
 
-    statement = (entry_json['edgar_companyname'],
-                 entry_json['edgar_formtype'],
-                 entry_json['edgar_filingdate'],
-                 entry_json['edgar_ciknumber'],
-                 entry_json.get('edgar_period'),
-                 entry_json['id'])
-    return(statement)
+
 def collect_filings(filing):
     xbrl_document = access_xbrl_doc_data(filing)
     doc_values = parse_filing(xbrl_document)
     filing = extract_xbrl(doc_values)
+    return  filing
+
 
 def build_index_table(base_entries):
     schema = StructType([StructField('companyname', StringType()),
@@ -148,7 +152,7 @@ def build_index_table(base_entries):
     sec_entry_df = spark.createDataFrame(base_entries, schema)
     sec_entry_df = sec_entry_df.withColumn("filingdate", to_date("filingdate", "MM/dd/yyyy"))
     sec_entry_df = sec_entry_df.withColumn('period', to_date("period", "yyyyMMdd"))
-    return(sec_entry_df)
+    return sec_entry_df
 
 #
 #--------------------------------------------------------------------------------------
@@ -196,15 +200,14 @@ def main(argv):
                 index_range.append((year,month))
         index_dates = sc.parallelize(index_range,4)
 
-        base_entries = index_dates.flatMap(lambda rss: SECdownload_rss_entries(rss[0],rss[1])).map(lambda rss: convert_entries(rss))
+        base_entries = index_dates.flatMap(lambda rss: SEC_rss_pre_processor(rss[0], rss[1])).map(lambda rss: convert_entries(rss))
         xbrl_df = build_index_table(base_entries)
         a = xbrl_df.rdd.flatMap(lambda filing: collect_filings(filing.id))
         df = a.toDF()
-        print(df.show(5000))
+        print(df.show(50))
 
     end_time = time.time()
     print("Elapsed time:", end_time - start_time, "seconds")
-
 
 
 if __name__ == "__main__":
