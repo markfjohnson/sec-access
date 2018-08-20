@@ -7,12 +7,12 @@ RUN apt-get update && apt-get install -y software-properties-common
 RUN add-apt-repository universe
 #RUN apt-get install -y gcc python-devel libev libev-devel
 RUN apt-get install -y python-pip python-pandas build-essential python-dev python3-pip libxml2
-RUN pip3 install -y xmltodict
-RUN pip3 install -y py4j
-RUN pip3 install -y kafka-python
-RUN pip3 install -y cassandra-driver
-RUN pip3 install -y beautifulsoup4
-RUN pip3 install -y lxml
+RUN pip3 install xmltodict
+RUN pip3 install py4j
+RUN pip3 install kafka-python
+RUN pip3 install cassandra-driver
+RUN pip3 install beautifulsoup4
+RUN pip3 install lxml
 
 
 
