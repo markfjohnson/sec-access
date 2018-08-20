@@ -12,7 +12,7 @@ RUN pip3 install py4j
 RUN pip3 install kafka-python
 RUN pip3 install cassandra-driver
 RUN pip3 install beautifulsoup4
-RUN pip3 install lxml
+#RUN pip3 install lxml
 
 
 
