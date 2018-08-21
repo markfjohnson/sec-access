@@ -12,11 +12,12 @@ from pyspark import SparkContext
 from pyspark.sql import SQLContext, Row, SparkSession
 from pyspark.sql.functions import to_date
 from pyspark.sql.types import *
-from urllib.request import urlopen
+#from urllib.request import urlopen
+import urllib3
 from zipfile import ZipFile
 
 
-conf = SparkConf().setMaster("mesos://")
+# conf = SparkConf().setMaster("mesos://")
 sc = SparkContext("local", "simple App")
 sqlContext = SQLContext(sc)
 spark = SparkSession(sc)
@@ -66,7 +67,9 @@ def excluded_xbrl_files(fname):
 
 
 def access_xbrl_doc_data(link):
-    resp = urlopen(link)
+ #   resp = urlopen(link)
+    http = urllib3.PoolManager()
+    resp = http.request("GET", link).data
     zip_ref = ZipFile(BytesIO(resp.read()))
     fileList = zip_ref.namelist()
     xbrl_file = [x for x in fileList if excluded_xbrl_files(x)][0]
@@ -120,9 +123,12 @@ def extract_xbrl(doc_values):
 def SEC_rss_pre_processor(year, month):
     edgarFilingsFeed = 'http://www.sec.gov/Archives/edgar/monthly/xbrlrss-' + str(year) + '-' + str(month).zfill(
         2) + '.xml'
-    a = urlopen(edgarFilingsFeed).read()
+#    a = urlopen(edgarFilingsFeed).read()
+    http = urllib3.PoolManager()
+    a = http.request("GET", edgarFilingsFeed).data
     soup = BeautifulSoup(a, 'lxml')
     entries = soup.find_all(re.compile('^(item)', re.IGNORECASE | re.MULTILINE))
+    print("Found {} entries in {}".format(len(entries), edgarFilingsFeed))
     return entries
 
 
