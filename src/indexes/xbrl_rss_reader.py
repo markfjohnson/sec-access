@@ -6,15 +6,16 @@ import socket
 import sys
 import time
 from io import BytesIO
-from urllib.request import urlopen
-from zipfile import ZipFile
-
 import xmltodict
 from bs4 import BeautifulSoup
 from pyspark import SparkContext
 from pyspark.sql import SQLContext, Row, SparkSession
 from pyspark.sql.functions import to_date
 from pyspark.sql.types import *
+from urllib.request import urlopen
+from zipfile import ZipFile
+
+
 
 sc = SparkContext("local", "simple App")
 sqlContext = SQLContext(sc)
