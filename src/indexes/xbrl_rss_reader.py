@@ -16,7 +16,7 @@ from urllib.request import urlopen
 from zipfile import ZipFile
 
 
-
+conf = SparkConf().setMaster("mesos://")
 sc = SparkContext("local", "simple App")
 sqlContext = SQLContext(sc)
 spark = SparkSession(sc)
