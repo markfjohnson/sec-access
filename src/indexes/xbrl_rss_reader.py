@@ -70,7 +70,7 @@ def access_xbrl_doc_data(link):
  #   resp = urlopen(link)
     http = urllib3.PoolManager()
     resp = http.request("GET", link).data
-    zip_ref = ZipFile(BytesIO(resp.read()))
+    zip_ref = ZipFile(BytesIO(resp))
     fileList = zip_ref.namelist()
     xbrl_file = [x for x in fileList if excluded_xbrl_files(x)][0]
     a = zip_ref.read(xbrl_file)
