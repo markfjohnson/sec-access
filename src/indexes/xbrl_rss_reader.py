@@ -45,7 +45,7 @@ def is_number(s):
 
 
 def parse_filing(a):
-    soup = BeautifulSoup(a, 'lxml')
+    soup = BeautifulSoup(a)
     document_type = get_xbrl_element_value("dei:DocumentType", soup)
     company_name = get_xbrl_element_value("dei:EntityRegistrantName", soup)
     symbol = get_xbrl_element_value("dei:TradingSymbol", soup)
@@ -126,7 +126,7 @@ def SEC_rss_pre_processor(year, month):
 #    a = urlopen(edgarFilingsFeed).read()
     http = urllib3.PoolManager()
     a = http.request("GET", edgarFilingsFeed).data
-    soup = BeautifulSoup(a, 'lxml')
+    soup = BeautifulSoup(a)
     entries = soup.find_all(re.compile('^(item)', re.IGNORECASE | re.MULTILINE))
     print("Found {} entries in {}".format(len(entries), edgarFilingsFeed))
     return entries
