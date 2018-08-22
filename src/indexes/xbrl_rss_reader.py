@@ -25,7 +25,7 @@ spark = SparkSession(sc)
 
 def get_xbrl_element_value(tag, parser):
     h = parser.find(re.compile(tag, re.IGNORECASE | re.MULTILINE))
-    result = h.text if not None else None
+    result = h.text if h is not None else None
     return result
 
 
