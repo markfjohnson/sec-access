@@ -210,9 +210,10 @@ def main(argv):
 
         base_entries = index_dates.flatMap(lambda rss: SEC_rss_pre_processor(rss[0], rss[1])).map(lambda rss: convert_entries(rss))
         xbrl_df = build_index_table(base_entries)
+        xbrl_df.write.format("csv").save("sec_index.csv")
         a = xbrl_df.rdd.flatMap(lambda filing: collect_filings(filing.id))
         df = a.toDF()
-        print(df.show(50))
+        df.write.format("csv").save("sec_filing.csv")
 
     end_time = time.time()
     print("Elapsed time:", end_time - start_time, "seconds")
