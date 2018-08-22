@@ -134,12 +134,13 @@ def SEC_rss_pre_processor(year, month):
 
 def convert_entries(entry_json):
     a = xmltodict.parse(str(entry_json))['item']
+    print(a)
     statement = (a['edgar:xbrlfiling']['edgar:companyname'],
                  a['edgar:xbrlfiling']['edgar:formtype'],
                  a['edgar:xbrlfiling']['edgar:filingdate'],
                  a['edgar:xbrlfiling']['edgar:ciknumber'],
                  a['edgar:xbrlfiling'].get('edgar_period'),
-                 a['guid'])
+                 a.get('guid')
     return statement
 
 
