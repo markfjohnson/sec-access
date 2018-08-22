@@ -1,4 +1,2 @@
-import urllib3
-http = urllib3.PoolManager()
-resp = http.request("GET", "http://www.yahoo.com")
-print(resp)
+a = 5 if False else 2
+print(a)
