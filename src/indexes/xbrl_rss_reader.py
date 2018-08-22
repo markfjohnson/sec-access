@@ -140,7 +140,7 @@ def convert_entries(entry_json):
                  a['edgar:xbrlfiling']['edgar:filingdate'],
                  a['edgar:xbrlfiling']['edgar:ciknumber'],
                  a['edgar:xbrlfiling'].get('edgar_period'),
-                 a.get('guid')
+                 a.get('guid'))
     return statement
 
 
