@@ -9,12 +9,15 @@ from io import BytesIO
 import xmltodict
 from bs4 import BeautifulSoup
 from pyspark import SparkContext
+from pyspark import SparkConf
+import pyspark_cassandra
+
 from pyspark.sql import SQLContext, Row, SparkSession
 from pyspark.sql.functions import to_date
 from pyspark.sql.types import *
-#from urllib.request import urlopen
 import urllib3
 from zipfile import ZipFile
+
 
 
 # conf = SparkConf().setMaster("mesos://")
@@ -124,7 +127,7 @@ def extract_xbrl(doc_values):
 def SEC_rss_pre_processor(year, month):
     edgarFilingsFeed = 'http://www.sec.gov/Archives/edgar/monthly/xbrlrss-' + str(year) + '-' + str(month).zfill(
         2) + '.xml'
-#    a = urlopen(edgarFilingsFeed).read()
+
     http = urllib3.PoolManager()
     a = http.request("GET", edgarFilingsFeed).data
     soup = BeautifulSoup(a)

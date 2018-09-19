@@ -7,8 +7,8 @@
 dcos package install --yes dcos-enterprise-cli --cli
 
 dcos package install --yes marathon-lb
-dcos package install --yes portworx
-dcos marathon app add
+#dcos package install --yes portworx
+
 # TODO Setup service account for cassandra
 dcos package install --yes cassandra
 dcos marathon app add cas-client.json
